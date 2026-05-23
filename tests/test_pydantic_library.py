@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from robotframework_pydantic.pydanticlibrary import PydanticLibrary
+from PydanticLibrary import PydanticLibrary
 
 
 @pytest.fixture

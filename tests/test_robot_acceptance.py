@@ -7,7 +7,7 @@ from robot import run as robot_run
 
 def test_robot_suite_passes(tmp_path: Path) -> None:
     project_root = Path(__file__).resolve().parents[1]
-    suite = project_root / "tests" / "robot"
+    suite = project_root / "tests" / "acceptance"
     output_dir = tmp_path / "robot-output"
 
     rc = robot_run(

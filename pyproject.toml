@@ -17,6 +17,7 @@ classifiers = [
 
 [dependency-groups]
 dev = [
+  "mypy>=2.1.0",
   "pre-commit>=4.6.0",
   "pytest>=8.4.0",
   "robotcode[runner,languageserver]>=2.5.1",
@@ -36,3 +37,7 @@ module-root = "src"
 
 [tool.uv]
 exclude-newer = "7 days"
+
+[tool.mypy]
+ignore_missing_imports = true
+strict = true
