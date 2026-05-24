@@ -21,6 +21,7 @@ dev = [
   "pre-commit>=4.6.0",
   "pytest>=8.4.0",
   "robotcode[runner,languageserver]>=2.5.1",
+  "robotframework-robocop>=8.2.8",
 ]
 
 [tool.pytest.ini_options]

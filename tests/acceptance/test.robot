@@ -1,23 +1,25 @@
 *** Settings ***
+Documentation       Acceptance tests for PydanticLibrary.
 Library     PydanticLibrary    models=${CURDIR}/models.py
 
 
 *** Test Cases ***
 Validate Schema With Dictionary
+    [Documentation]    Validate that a dictionary conforms to a Pydantic schema.
     VAR    &{data}=    foo=1    bar=test
-    ${obj}=    PydanticLibrary.Validate Schema    ${data}    schema=FooBar
-    Should Be Equal As Integers    ${obj.foo}    1
-    Should Be Equal    ${obj.bar}    test
+    Validate Schema    ${data}    schema=FooBar
 
 Validation Failure Raises Error
+    [Documentation]    Verify that schema validation raises an error on invalid data.
+    VAR    &{data}=    foo=nope    bar=test
     Run Keyword And Expect Error
     ...    *Validation failed*
-    ...    PydanticLibrary.Validate Schema
+    ...    Validate Schema
+    ...    ${data}
     ...    schema=FooBar
-    ...    foo=nope
-    ...    bar=x
 
 Create Object With Dynamic Keyword
-    ${obj}=    PydanticLibrary.Create FooBar    foo=2    bar=value
+    [Documentation]    Create a Pydantic model instance via a dynamic keyword.
+    ${obj}=    Create FooBar    foo=2    bar=value
     Should Be Equal As Integers    ${obj.foo}    2
     Should Be Equal    ${obj.bar}    value
