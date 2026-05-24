@@ -19,11 +19,12 @@ class PydanticLibrary:
 
         *** Test Cases ***
         Validate Schema
-            &{data}=    foo=1    bar=test
-            Validate Schema    ${data}    schema=FooBar
+            &{item}=    product_id=101    name=Apple    quantity=3    unit_price=0.50
+            &{data}=    cart_id=1    customer_name=Alice    items=[${item}]
+            Validate Schema    ${data}    schema=ShoppingCart
 
         Create Object
-            ${obj}=    Create FooBar    foo=1    bar=test
+            ${obj}=    Create ShoppingCart    cart_id=1    customer_name=Alice    items=[${item}]
     """
 
     ROBOT_LIBRARY_SCOPE = "SUITE"
@@ -82,8 +83,8 @@ class PydanticLibrary:
             return (
                 "Validate an input object against a schema.\n\n"
                 "Examples:\n"
-                "- Validate Schema    ${data}    schema=FooBar\n"
-                "- Validate Schema    ${data}    FooBar"
+                "- Validate Schema    ${data}    schema=ShoppingCart\n"
+                "- Validate Schema    ${data}    ShoppingCart"
             )
 
         model_name = self._extract_model_name_from_create_keyword(name)
@@ -109,7 +110,7 @@ class PydanticLibrary:
 
         if schema_name is None:
             raise TypeError(
-                "'schema' is required. Example: Validate Schema    ${data}    schema=FooBar"
+                "'schema' is required. Example: Validate Schema    ${data}    schema=ShoppingCart"
             )
 
         if kwargs:
