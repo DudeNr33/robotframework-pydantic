@@ -31,6 +31,18 @@ class PydanticLibrary:
     ROBOT_LIBRARY_VERSION = "0.1.0"
 
     def __init__(self, models: str) -> None:
+        """Configure the library with the Pydantic models to expose.
+
+        ``models`` can be either:
+        - a path to a Python file (``/path/to/models.py``)
+        - a Python module import path (``my_project.models``)
+
+        All classes in the given module that inherit from ``pydantic.BaseModel``
+        are discovered automatically and exposed as dynamic ``Create <ModelName>``
+        keywords.
+
+        Raises ``ValueError`` if no ``BaseModel`` subclasses are found.
+        """
         if not models:
             raise ValueError(
                 "'models' argument is required (module path or .py file path)."

@@ -1,7 +1,7 @@
 [project]
 name = "robotframework-pydantic"
 version = "0.1.0"
-description = "Add your description here"
+description = "Robot Framework keyword library for validating data with Pydantic models and creating model instances dynamically."
 readme = "README.md"
 authors = [
   { name = "DudeNr33", email = "3929834+DudeNr33@users.noreply.github.com" },
