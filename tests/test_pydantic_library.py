@@ -47,7 +47,7 @@ def test_validate_schema_keyword_returns_validated_model(models_file: Path) -> N
     lib = PydanticLibrary(str(models_file))
 
     obj = lib.run_keyword(
-        "Validate Schema", tuple(), {"schema": "FooBar", "foo": "1", "bar": "test"}
+        "Validate Schema", ({"foo": "1", "bar": "test"},), {"schema": "FooBar"}
     )
 
     assert obj.foo == 1
@@ -69,6 +69,17 @@ def test_validation_error_is_reported_as_assertion_error(models_file: Path) -> N
     with pytest.raises(AssertionError, match="Validation failed"):
         lib.run_keyword(
             "Validate Schema",
+            ({"foo": "not-an-int", "bar": "x"},),
+            {"schema": "FooBar"},
+        )
+
+
+def test_validate_schema_rejects_direct_field_kwargs(models_file: Path) -> None:
+    lib = PydanticLibrary(str(models_file))
+
+    with pytest.raises(TypeError, match="Unexpected keyword arguments"):
+        lib.run_keyword(
+            "Validate Schema",
             tuple(),
-            {"schema": "FooBar", "foo": "not-an-int", "bar": "x"},
+            {"schema": "FooBar", "foo": 1, "bar": "x"},
         )

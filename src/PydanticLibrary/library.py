@@ -64,7 +64,7 @@ class PydanticLibrary:
 
     def get_keyword_arguments(self, name: str) -> list[str]:
         if name.lower() == "validate schema":
-            return ["*data", "schema=None", "**fields"]
+            return ["data", "schema=None"]
 
         if self._extract_model_name_from_create_keyword(name) is not None:
             return ["*data", "**fields"]
@@ -80,10 +80,10 @@ class PydanticLibrary:
 
         if name.lower() == "validate schema":
             return (
-                "Validate input data against a schema.\n\n"
+                "Validate an input object against a schema.\n\n"
                 "Examples:\n"
                 "- Validate Schema    ${data}    schema=FooBar\n"
-                "- Validate Schema    schema=FooBar    foo=1    bar=test"
+                "- Validate Schema    ${data}    FooBar"
             )
 
         model_name = self._extract_model_name_from_create_keyword(name)
@@ -112,8 +112,20 @@ class PydanticLibrary:
                 "'schema' is required. Example: Validate Schema    ${data}    schema=FooBar"
             )
 
+        if kwargs:
+            unexpected = ", ".join(sorted(kwargs))
+            raise TypeError(
+                "Validate Schema accepts only the input object plus schema. "
+                f"Unexpected keyword arguments: {unexpected}"
+            )
+
+        if len(payload_args) != 1:
+            raise TypeError(
+                "Validate Schema requires exactly one input object as positional argument."
+            )
+
         model_cls = self._get_model(str(schema_name))
-        payload = self._extract_payload(args=payload_args, kwargs=kwargs)
+        payload = payload_args[0]
 
         try:
             return model_cls.model_validate(payload)
