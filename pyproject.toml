@@ -20,6 +20,7 @@ dev = [
   "mypy>=2.1.0",
   "pre-commit>=4.6.0",
   "pytest>=8.4.0",
+  "pytest-cov>=7.1.0",
   "robotcode[runner,languageserver]>=2.5.1",
   "robotframework-robocop>=8.2.8",
 ]

@@ -36,3 +36,23 @@ class NotAModel:
         + "\n"
     )
     return path
+
+
+@pytest.fixture
+def models_import_path(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> str:
+    package_dir = tmp_path / "sample_project"
+    package_dir.mkdir()
+    (package_dir / "__init__.py").write_text("\n")
+    (package_dir / "models.py").write_text(
+        """
+from pydantic import BaseModel
+
+
+class ImportedModel(BaseModel):
+    value: int
+""".strip()
+        + "\n"
+    )
+
+    monkeypatch.syspath_prepend(str(tmp_path))
+    return "sample_project.models"
