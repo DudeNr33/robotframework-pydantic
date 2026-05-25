@@ -5,7 +5,7 @@ import importlib.util
 import inspect
 from pathlib import Path
 from types import ModuleType
-from typing import Any, Mapping
+from typing import Any, get_args, get_origin
 
 from pydantic import BaseModel, ValidationError
 
@@ -80,14 +80,35 @@ class PydanticLibrary:
 
         raise AttributeError(f"Unknown keyword: {name}")
 
-    def get_keyword_arguments(self, name: str) -> list[str]:
-        if self._extract_model_name_from_validate_keyword(name) is not None:
+    def get_keyword_arguments(self, name: str) -> list[Any]:
+        model_name = self._extract_model_name_from_validate_keyword(name)
+        if model_name is not None:
             return ["data"]
 
-        if self._extract_model_name_from_create_keyword(name) is not None:
-            return ["*data", "**fields"]
+        model_name = self._extract_model_name_from_create_keyword(name)
+        if model_name is not None:
+            model_cls = self._get_model(model_name)
+            return self._build_create_keyword_arguments(model_cls)
 
         return ["*args", "**kwargs"]
+
+    def get_keyword_types(self, name: str) -> dict[str, Any]:
+        model_name = self._extract_model_name_from_validate_keyword(name)
+        if model_name is not None:
+            model_cls = self._get_model(model_name)
+            return {"data": dict, "return": model_cls}
+
+        model_name = self._extract_model_name_from_create_keyword(name)
+        if model_name is not None:
+            model_cls = self._get_model(model_name)
+            types: dict[str, Any] = {"extra": Any, "return": model_cls}
+            for field_name, field_info in model_cls.model_fields.items():
+                types[field_name] = self._type_for_argument_conversion(
+                    field_info.annotation
+                )
+            return types
+
+        return {}
 
     def get_keyword_documentation(self, name: str) -> str:
         if name == "__intro__":
@@ -112,7 +133,10 @@ class PydanticLibrary:
 
         model_name = self._extract_model_name_from_create_keyword(name)
         if model_name is not None:
-            return f"Create and return an instance of ``{model_name}`` from provided fields."
+            return (
+                f"Create and return an instance of ``{model_name}`` from named fields.\n\n"
+                f"Use named arguments matching the model field names."
+            )
 
         return ""
 
@@ -146,11 +170,15 @@ class PydanticLibrary:
     def _create_model(
         self, model_name: str, args: tuple[Any, ...], kwargs: dict[str, Any]
     ) -> BaseModel:
+        if args:
+            raise TypeError(
+                f"Create {model_name} accepts only named arguments matching model fields."
+            )
+
         model_cls = self._get_model(model_name)
-        payload = self._extract_payload(args=args, kwargs=kwargs)
 
         try:
-            return model_cls.model_validate(payload)
+            return model_cls.model_validate(kwargs)
         except ValidationError as exc:
             raise AssertionError(
                 f"Creation failed for model '{model_cls.__name__}':\n{exc}"
@@ -159,28 +187,80 @@ class PydanticLibrary:
     # -----------------------------
     # Internal helpers
     # -----------------------------
-    def _extract_payload(self, args: tuple[Any, ...], kwargs: dict[str, Any]) -> Any:
-        # Accept one positional mapping/object, or field kwargs, or a merge of both.
-        if len(args) > 0:
-            first = args[0]
+    def _build_create_keyword_arguments(self, model_cls: type[BaseModel]) -> list[Any]:
+        arguments: list[Any] = ["*"]
 
-            if len(args) > 1:
-                raise TypeError("Too many positional arguments provided.")
+        for field_name, field_info in model_cls.model_fields.items():
+            if field_info.is_required():
+                arguments.append(field_name)
+                continue
 
-            if isinstance(first, Mapping):
-                data = dict(first)
-                if kwargs:
-                    data.update(kwargs)
-                return data
-
-            if kwargs:
-                raise TypeError(
-                    "Cannot combine non-mapping positional data with keyword fields."
+            if field_info.default_factory is not None:
+                factory_name = getattr(
+                    field_info.default_factory,
+                    "__name__",
+                    repr(field_info.default_factory),
                 )
+                arguments.append((field_name, f"<factory:{factory_name}>"))
+                continue
 
-            return first
+            arguments.append((field_name, field_info.default))
 
-        return kwargs
+        # Keep support for models that allow extra fields.
+        arguments.append("**extra")
+        return arguments
+
+    def _type_for_argument_conversion(self, annotation: Any) -> Any:
+        if annotation is Any:
+            return Any
+
+        origin = get_origin(annotation)
+        if origin is None:
+            if isinstance(annotation, type):
+                return annotation
+            return self._format_annotation(annotation)
+
+        # Keep full generic type information for Libdoc/IntelliSense.
+        return self._format_annotation(annotation)
+
+    def _format_annotation(self, annotation: Any) -> str:
+        if annotation is Any:
+            return "Any"
+
+        origin = get_origin(annotation)
+        if origin is None:
+            if isinstance(annotation, type):
+                return annotation.__name__
+
+            text = str(annotation)
+            if text.startswith("typing."):
+                text = text.removeprefix("typing.")
+            return text.replace("NoneType", "None")
+
+        args = get_args(annotation)
+
+        if origin is list:
+            return f"list[{self._format_annotation(args[0])}]"
+        if origin is dict:
+            return (
+                f"dict[{self._format_annotation(args[0])}, "
+                f"{self._format_annotation(args[1])}]"
+            )
+        if origin is tuple:
+            return f"tuple[{', '.join(self._format_annotation(arg) for arg in args)}]"
+        if origin is set:
+            return f"set[{self._format_annotation(args[0])}]"
+
+        origin_name = getattr(origin, "__name__", str(origin).replace("typing.", ""))
+
+        if origin_name in {"UnionType", "Union"}:
+            return " | ".join(self._format_annotation(arg) for arg in args)
+
+        if args:
+            rendered_args = ", ".join(self._format_annotation(arg) for arg in args)
+            return f"{origin_name}[{rendered_args}]"
+
+        return origin_name
 
     def _extract_model_name_from_validate_keyword(
         self, keyword_name: str
