@@ -3,6 +3,7 @@ from __future__ import annotations
 import importlib
 import importlib.util
 import inspect
+import re
 from pathlib import Path
 from types import ModuleType
 from typing import Any, get_args, get_origin
@@ -326,7 +327,8 @@ class PydanticLibrary:
 
     def _load_module_from_path(self, path: Path) -> ModuleType:
         resolved = path.resolve()
-        module_name = f"robotframework_pydantic_models_{abs(hash(str(resolved)))}"
+        safe_stem = self._sanitize_module_stem(resolved.stem)
+        module_name = f"robotframework_pydantic_models__{safe_stem}"
 
         spec = importlib.util.spec_from_file_location(module_name, resolved)
         if spec is None or spec.loader is None:
@@ -335,6 +337,14 @@ class PydanticLibrary:
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
         return module
+
+    def _sanitize_module_stem(self, stem: str) -> str:
+        sanitized = re.sub(r"\W", "_", stem).strip("_")
+        if not sanitized:
+            return "models"
+        if sanitized[0].isdigit():
+            return f"_{sanitized}"
+        return sanitized
 
     def _discover_models(self, module: ModuleType) -> dict[str, type[BaseModel]]:
         models: dict[str, type[BaseModel]] = {}

@@ -78,6 +78,7 @@ def test_validate_keyword_returns_validated_model(models_file: Path) -> None:
     assert obj.customer_name == "Alice"
     assert len(obj.items) == 1
     assert obj.items[0].name == "Apple"
+    assert type(obj).__module__ == "robotframework_pydantic_models__models"
 
 
 def test_create_dynamic_keyword_returns_model_instance(models_file: Path) -> None:

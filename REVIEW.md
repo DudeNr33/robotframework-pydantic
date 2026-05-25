@@ -204,15 +204,15 @@ ROBOT_LIBRARY_VERSION = version("robotframework-pydantic")
 | 3.1 | `schema` falsely optional in signature | 🟠 High | 🚫 Obsolete |
 | 3.2 | `*data, **fields` signature misleads IDEs | 🟠 High | 🚫 Obsolete |
 | 3.3 | Misleading error for non-existent file path | 🟠 High | ✅ Fixed |
-| 3.4 | Hash module name leaks into errors/repr | 🟡 Medium | 🔓 Open |
+| 3.4 | Hash module name leaks into errors/repr | 🟡 Medium | ✅ Fixed |
 | 3.5 | No JSON string input support | 🟡 Medium | 🔓 Open |
 | 3.6 | No per-model `Validate <ModelName>` | 🟡 Medium | ✅ Fixed |
 | 3.7 | Silent collision on case-insensitive name clash | 🟡 Medium | 🔓 Open |
 | 3.8 | Pydantic v2 features largely unexposed | 🟡 Medium | 🔓 Open |
 | 4.1 | `robot.toml` python-path commented out | 🟡 Medium | ✅ Fixed |
-| 4.2 | Artifact HTML/XML files committed to root | 🟡 Medium | 🔓 Open |
+| 4.2 | Artifact HTML/XML files committed to root | 🟡 Medium | 🚫 False positive |
 | 4.3 | No CI configuration | 🟡 Medium | 🔓 Open |
-| 4.4 | Floating `exclude-newer = "7 days"` | 🟡 Medium | 🔓 Open |
+| 4.4 | Floating `exclude-newer = "7 days"` | 🟡 Medium | 🚫 False positive |
 | 4.5 | Dev pins Python 3.14, supports 3.11+ | 🟡 Medium | 🔓 Open |
 | 4.6 | Over-tight minimum dependency versions | 🟡 Medium | 🔓 Open |
 | 4.7 | No CHANGELOG or CONTRIBUTING guide | 🟡 Medium | 🔓 Open |
