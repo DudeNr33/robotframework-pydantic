@@ -5,23 +5,24 @@ Library             PydanticLibrary    models=${CURDIR}/models.py
 
 
 *** Test Cases ***
-Validate Schema With Nested Models
-    [Documentation]    Validate that a dictionary with nested models conforms to a Pydantic schema.
+Validate Model With Nested Models
+    [Documentation]    Validate that a dictionary with nested models conforms to a Pydantic model.
     VAR    &{item}=    product_id=101    name=Apple    quantity=3    unit_price=0.50
     VAR    @{items}=    ${item}
     VAR    &{data}=    cart_id=1    customer_name=Alice    items=${items}
-    Validate Schema    ${data}    schema=ShoppingCart
+    ${cart}=    Validate ShoppingCart    ${data}
+    Should Be Equal As Integers    ${cart.cart_id}    1
+    Should Be Equal    ${cart.customer_name}    Alice
 
 Validation Failure On Nested Field
-    [Documentation]    Verify that schema validation raises an error when a nested field is invalid.
+    [Documentation]    Verify that model validation raises an error when a nested field is invalid.
     VAR    &{item}=    product_id=101    name=Apple    quantity=not-a-number    unit_price=0.50
     VAR    @{items}=    ${item}
     VAR    &{data}=    cart_id=1    customer_name=Alice    items=${items}
     Run Keyword And Expect Error
     ...    *Validation failed*
-    ...    Validate Schema
+    ...    Validate ShoppingCart
     ...    ${data}
-    ...    schema=ShoppingCart
 
 Create Object With Nested Models
     [Documentation]    Create a Pydantic model instance with nested models via a dynamic keyword.

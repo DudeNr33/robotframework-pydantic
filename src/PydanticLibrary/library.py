@@ -18,10 +18,10 @@ class PydanticLibrary:
         Library    PydanticLibrary    models=${CURDIR}/models.py
 
         *** Test Cases ***
-        Validate Schema
+        Validate Model
             &{item}=    product_id=101    name=Apple    quantity=3    unit_price=0.50
             &{data}=    cart_id=1    customer_name=Alice    items=[${item}]
-            Validate Schema    ${data}    schema=ShoppingCart
+            Validate ShoppingCart    ${data}
 
         Create Object
             ${obj}=    Create ShoppingCart    cart_id=1    customer_name=Alice    items=[${item}]
@@ -38,8 +38,8 @@ class PydanticLibrary:
         - a Python module import path (``my_project.models``)
 
         All classes in the given module that inherit from ``pydantic.BaseModel``
-        are discovered automatically and exposed as dynamic ``Create <ModelName>``
-        keywords.
+        are discovered automatically and exposed as dynamic ``Validate <ModelName>``
+        and ``Create <ModelName>`` keywords.
 
         Raises ``ValueError`` if no ``BaseModel`` subclasses are found.
         """
@@ -59,15 +59,20 @@ class PydanticLibrary:
     # Dynamic library API
     # -----------------------------
     def get_keyword_names(self) -> list[str]:
-        return ["Validate Schema", *[f"Create {name}" for name in sorted(self._models)]]
+        keywords = []
+        for name in sorted(self._models):
+            keywords.append(f"Validate {name}")
+            keywords.append(f"Create {name}")
+        return keywords
 
     def run_keyword(
         self, name: str, args: tuple[Any, ...], kwargs: dict[str, Any] | None = None
     ) -> Any:
         kwargs = kwargs or {}
 
-        if name.lower() == "validate schema":
-            return self._validate_schema(args, kwargs)
+        model_name = self._extract_model_name_from_validate_keyword(name)
+        if model_name is not None:
+            return self._validate_model(model_name, args, kwargs)
 
         model_name = self._extract_model_name_from_create_keyword(name)
         if model_name is not None:
@@ -76,8 +81,8 @@ class PydanticLibrary:
         raise AttributeError(f"Unknown keyword: {name}")
 
     def get_keyword_arguments(self, name: str) -> list[str]:
-        if name.lower() == "validate schema":
-            return ["data", "schema=None"]
+        if self._extract_model_name_from_validate_keyword(name) is not None:
+            return ["data"]
 
         if self._extract_model_name_from_create_keyword(name) is not None:
             return ["*data", "**fields"]
@@ -88,63 +93,54 @@ class PydanticLibrary:
         if name == "__intro__":
             return (
                 "Library for validating and creating Pydantic models from Robot Framework. "
-                "Provide `models` as a Python module path or a path to a .py file."
+                "Provide `models` as a Python module path or a path to a .py file. "
+                "Each discovered model is exposed as a ``Validate <ModelName>`` and a "
+                "``Create <ModelName>`` keyword."
             )
 
-        if name.lower() == "validate schema":
+        model_name = self._extract_model_name_from_validate_keyword(name)
+        if model_name is not None:
             return (
-                "Validate an input object against a schema.\n\n"
-                "Examples:\n"
-                "- Validate Schema    ${data}    schema=ShoppingCart\n"
-                "- Validate Schema    ${data}    ShoppingCart"
+                f"Validate ``data`` against the ``{model_name}`` Pydantic model and "
+                f"return the validated model instance.\n\n"
+                f"``data`` must be a dictionary (or any mapping) whose keys match the "
+                f"fields of ``{model_name}``. Raises ``AssertionError`` on validation "
+                f"failure with a detailed Pydantic error message.\n\n"
+                f"Example:\n"
+                f"    ${{obj}}=    Validate {model_name}    ${{data}}"
             )
 
         model_name = self._extract_model_name_from_create_keyword(name)
         if model_name is not None:
-            return (
-                f"Create and return an instance of `{model_name}` from provided fields."
-            )
+            return f"Create and return an instance of ``{model_name}`` from provided fields."
 
         return ""
 
     # -----------------------------
     # Keyword implementations
     # -----------------------------
-    def _validate_schema(
-        self, args: tuple[Any, ...], kwargs: dict[str, Any]
+    def _validate_model(
+        self, model_name: str, args: tuple[Any, ...], kwargs: dict[str, Any]
     ) -> BaseModel:
-        schema_name = kwargs.pop("schema", None)
-        payload_args = args
-
-        if schema_name is None and len(args) >= 2:
-            schema_name = args[1]
-            payload_args = (args[0],)
-
-        if schema_name is None:
-            raise TypeError(
-                "'schema' is required. Example: Validate Schema    ${data}    schema=ShoppingCart"
-            )
-
         if kwargs:
             unexpected = ", ".join(sorted(kwargs))
             raise TypeError(
-                "Validate Schema accepts only the input object plus schema. "
+                f"Validate {model_name} accepts only a single positional data argument. "
                 f"Unexpected keyword arguments: {unexpected}"
             )
 
-        if len(payload_args) != 1:
+        if len(args) != 1:
             raise TypeError(
-                "Validate Schema requires exactly one input object as positional argument."
+                f"Validate {model_name} requires exactly one positional argument."
             )
 
-        model_cls = self._get_model(str(schema_name))
-        payload = payload_args[0]
+        model_cls = self._get_model(model_name)
 
         try:
-            return model_cls.model_validate(payload)
+            return model_cls.model_validate(args[0])
         except ValidationError as exc:
             raise AssertionError(
-                f"Validation failed for schema '{model_cls.__name__}':\n{exc}"
+                f"Validation failed for model '{model_cls.__name__}':\n{exc}"
             ) from exc
 
     def _create_model(
@@ -186,6 +182,26 @@ class PydanticLibrary:
 
         return kwargs
 
+    def _extract_model_name_from_validate_keyword(
+        self, keyword_name: str
+    ) -> str | None:
+        prefix = "validate "
+        if not keyword_name.lower().startswith(prefix):
+            return None
+
+        requested = keyword_name[len(prefix) :].strip()
+        if not requested:
+            return None
+
+        for existing_name in self._models:
+            if existing_name.lower() == requested.lower():
+                return existing_name
+
+        raise AttributeError(
+            f"Unknown model '{requested}' in keyword '{keyword_name}'. "
+            f"Available models: {', '.join(sorted(self._models))}"
+        )
+
     def _extract_model_name_from_create_keyword(self, keyword_name: str) -> str | None:
         prefix = "create "
         if not keyword_name.lower().startswith(prefix):
@@ -210,7 +226,7 @@ class PydanticLibrary:
                 return model_cls
 
         raise ValueError(
-            f"Unknown schema/model '{model_name}'. Available models: {', '.join(sorted(self._models))}"
+            f"Unknown model '{model_name}'. Available models: {', '.join(sorted(self._models))}"
         )
 
     def _load_module(self, models: str) -> ModuleType:

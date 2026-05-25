@@ -43,16 +43,17 @@ def test_dynamic_keywords_are_discovered(models_file: Path) -> None:
 
     names = lib.get_keyword_names()
 
-    assert "Validate Schema" in names
+    assert "Validate CartItem" in names
+    assert "Validate ShoppingCart" in names
     assert "Create CartItem" in names
     assert "Create ShoppingCart" in names
 
 
-def test_validate_schema_keyword_returns_validated_model(models_file: Path) -> None:
+def test_validate_keyword_returns_validated_model(models_file: Path) -> None:
     lib = PydanticLibrary(str(models_file))
 
     obj = lib.run_keyword(
-        "Validate Schema",
+        "Validate ShoppingCart",
         (
             {
                 "cart_id": "1",
@@ -67,7 +68,7 @@ def test_validate_schema_keyword_returns_validated_model(models_file: Path) -> N
                 ],
             },
         ),
-        {"schema": "ShoppingCart"},
+        {},
     )
 
     assert obj.cart_id == 1
@@ -109,7 +110,7 @@ def test_validation_error_is_reported_as_assertion_error(models_file: Path) -> N
 
     with pytest.raises(AssertionError, match="Validation failed"):
         lib.run_keyword(
-            "Validate Schema",
+            "Validate ShoppingCart",
             (
                 {
                     "cart_id": "not-an-int",
@@ -117,16 +118,16 @@ def test_validation_error_is_reported_as_assertion_error(models_file: Path) -> N
                     "items": [],
                 },
             ),
-            {"schema": "ShoppingCart"},
+            {},
         )
 
 
-def test_validate_schema_rejects_direct_field_kwargs(models_file: Path) -> None:
+def test_validate_keyword_rejects_kwargs(models_file: Path) -> None:
     lib = PydanticLibrary(str(models_file))
 
     with pytest.raises(TypeError, match="Unexpected keyword arguments"):
         lib.run_keyword(
-            "Validate Schema",
+            "Validate ShoppingCart",
             tuple(),
-            {"schema": "ShoppingCart", "cart_id": 1, "customer_name": "Alice"},
+            {"cart_id": 1, "customer_name": "Alice"},
         )
