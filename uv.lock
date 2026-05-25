@@ -1001,8 +1001,8 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "pydantic", specifier = ">=2.13.4" },
-    { name = "robotframework", specifier = ">=7.4.2" },
+    { name = "pydantic" },
+    { name = "robotframework" },
 ]
 
 [package.metadata.requires-dev]
