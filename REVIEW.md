@@ -217,9 +217,9 @@ ROBOT_LIBRARY_VERSION = version("robotframework-pydantic")
 | 4.6 | Over-tight minimum dependency versions | 🟡 Medium | 🔓 Open |
 | 4.7 | No CHANGELOG or CONTRIBUTING guide | 🟡 Medium | 🔓 Open |
 | 5.1 | Acceptance tests cover only one simple happy-path model | 🟡 Medium | 🔓 Open |
-| 5.2 | No test for the module-import-path form | 🟡 Medium | 🔓 Open |
-| 5.3 | Unit tests cover only one `Create <Model>` call convention | 🟡 Medium | 🔓 Open |
-| 5.4 | Error paths under-represented in tests | 🟡 Medium | 🔓 Open |
+| 5.2 | No test for the module-import-path form | 🟡 Medium | ✅ Fixed |
+| 5.3 | Unit tests cover only one `Create <Model>` call convention | 🟡 Medium | ✅ Fixed |
+| 5.4 | Error paths under-represented in tests | 🟡 Medium | ✅ Fixed |
 | 6.1 | `Validate Schema` name is Pydantic-agnostic | ⚪ Low | 🚫 Obsolete |
 | 6.2 | `schema` parameter would be better named `model` | ⚪ Low | 🚫 Obsolete |
-| 6.3 | `ROBOT_LIBRARY_VERSION` hardcoded, will drift | ⚪ Low | 🔓 Open |
+| 6.3 | `ROBOT_LIBRARY_VERSION` hardcoded, will drift | ⚪ Low | ✅ Fixed |

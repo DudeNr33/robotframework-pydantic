@@ -1,10 +1,18 @@
 from __future__ import annotations
 
+from importlib.metadata import PackageNotFoundError, version
 from typing import Any, get_args, get_origin
 
 from pydantic import BaseModel, ValidationError
 
 from PydanticLibrary.model_loader import discover_pydantic_models, load_models_module
+
+
+def _get_library_version() -> str:
+    try:
+        return version("robotframework-pydantic")
+    except PackageNotFoundError:
+        return "0.0.0"
 
 
 class PydanticLibrary:
@@ -25,7 +33,7 @@ class PydanticLibrary:
     """
 
     ROBOT_LIBRARY_SCOPE = "SUITE"
-    ROBOT_LIBRARY_VERSION = "0.1.0"
+    ROBOT_LIBRARY_VERSION = _get_library_version()
 
     def __init__(self, models: str) -> None:
         """Configure the library with the Pydantic models to expose.
