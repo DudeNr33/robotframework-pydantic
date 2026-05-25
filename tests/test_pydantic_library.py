@@ -8,39 +8,6 @@ import pytest
 from PydanticLibrary import PydanticLibrary
 
 
-@pytest.fixture
-def models_file(tmp_path: Path) -> Path:
-    path = tmp_path / "models.py"
-    path.write_text(
-        """
-from decimal import Decimal
-
-from pydantic import BaseModel
-
-
-class CartItem(BaseModel):
-    product_id: int
-    name: str
-    quantity: int
-    unit_price: Decimal
-    discount: Decimal = Decimal("0.00")
-
-
-class ShoppingCart(BaseModel):
-    cart_id: int
-    customer_name: str
-    items: list[CartItem]
-    notes: str | None = None
-
-
-class NotAModel:
-    pass
-""".strip()
-        + "\n"
-    )
-    return path
-
-
 def test_dynamic_keywords_are_discovered(models_file: Path) -> None:
     lib = PydanticLibrary(str(models_file))
 
@@ -122,13 +89,6 @@ def test_validation_error_is_reported_as_assertion_error(models_file: Path) -> N
             ),
             {},
         )
-
-
-def test_non_existent_model_file_path_has_clear_error(tmp_path: Path) -> None:
-    missing = tmp_path / "missing_models.py"
-
-    with pytest.raises(FileNotFoundError, match="Model file does not exist"):
-        PydanticLibrary(str(missing))
 
 
 def test_validate_keyword_rejects_kwargs(models_file: Path) -> None:

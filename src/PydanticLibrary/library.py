@@ -1,14 +1,10 @@
 from __future__ import annotations
 
-import importlib
-import importlib.util
-import inspect
-import re
-from pathlib import Path
-from types import ModuleType
 from typing import Any, get_args, get_origin
 
 from pydantic import BaseModel, ValidationError
+
+from PydanticLibrary.model_loader import discover_pydantic_models, load_models_module
 
 
 class PydanticLibrary:
@@ -50,8 +46,8 @@ class PydanticLibrary:
             )
 
         self._models_source = models
-        self._module = self._load_module(models)
-        self._models = self._discover_models(self._module)
+        self._module = load_models_module(models)
+        self._models = discover_pydantic_models(self._module)
 
         if not self._models:
             raise ValueError(f"No Pydantic BaseModel subclasses found in '{models}'.")
@@ -309,53 +305,3 @@ class PydanticLibrary:
         raise ValueError(
             f"Unknown model '{model_name}'. Available models: {', '.join(sorted(self._models))}"
         )
-
-    def _load_module(self, models: str) -> ModuleType:
-        path = Path(models)
-        if path.exists():
-            if path.suffix != ".py":
-                raise ValueError(f"Model file must be a .py file: {models}")
-            return self._load_module_from_path(path)
-
-        if path.is_absolute() or path.suffix == ".py":
-            raise FileNotFoundError(
-                f"Model file does not exist: {models}. "
-                "Use a valid .py file path or a Python module import path."
-            )
-
-        return importlib.import_module(models)
-
-    def _load_module_from_path(self, path: Path) -> ModuleType:
-        resolved = path.resolve()
-        safe_stem = self._sanitize_module_stem(resolved.stem)
-        module_name = f"robotframework_pydantic_models__{safe_stem}"
-
-        spec = importlib.util.spec_from_file_location(module_name, resolved)
-        if spec is None or spec.loader is None:
-            raise ImportError(f"Could not load module spec from path: {resolved}")
-
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
-        return module
-
-    def _sanitize_module_stem(self, stem: str) -> str:
-        sanitized = re.sub(r"\W", "_", stem).strip("_")
-        if not sanitized:
-            return "models"
-        if sanitized[0].isdigit():
-            return f"_{sanitized}"
-        return sanitized
-
-    def _discover_models(self, module: ModuleType) -> dict[str, type[BaseModel]]:
-        models: dict[str, type[BaseModel]] = {}
-
-        for name, obj in inspect.getmembers(module, inspect.isclass):
-            if not issubclass(obj, BaseModel) or obj is BaseModel:
-                continue
-
-            if obj.__module__ != module.__name__:
-                continue
-
-            models[name] = obj
-
-        return models
