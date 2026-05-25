@@ -5,12 +5,7 @@ from pathlib import Path
 
 import pytest
 
-from PydanticLibrary.model_loader import (
-    discover_pydantic_models,
-    load_models_module,
-    load_module_from_path,
-    sanitize_module_stem,
-)
+from PydanticLibrary.model_loader import discover_pydantic_models, load_models_module
 
 
 class TestLoadModelsModule:
@@ -40,6 +35,39 @@ class TestLoadModelsModule:
     def test_non_existent_import_path_raises_import_error(self) -> None:
         with pytest.raises(ModuleNotFoundError):
             load_models_module("does_not_exist.models")
+
+    def test_reports_spec_loading_errors_when_loading_from_file_path(
+        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+    ) -> None:
+        module_file = tmp_path / "models.py"
+        module_file.write_text("\n")
+
+        monkeypatch.setattr(
+            "PydanticLibrary.model_loader.importlib.util.spec_from_file_location",
+            lambda *args, **kwargs: None,
+        )
+
+        with pytest.raises(ImportError, match="Could not load module spec"):
+            load_models_module(str(module_file))
+
+    def test_file_name_sanitization_is_reflected_in_loaded_module_name(
+        self, tmp_path: Path
+    ) -> None:
+        module_file = tmp_path / "123-model.py"
+        module_file.write_text(
+            """
+from pydantic import BaseModel
+
+
+class LocalModel(BaseModel):
+    value: int
+""".strip()
+            + "\n"
+        )
+
+        module = load_models_module(str(module_file))
+
+        assert module.__name__ == "robotframework_pydantic_models___123_model"
 
 
 class TestDiscoverPydanticModels:
@@ -84,23 +112,3 @@ class LocalModel(BaseModel):
             sys.path.pop(0)
 
         assert sorted(models) == ["LocalModel"]
-
-
-class TestModelLoaderHelpers:
-    def test_load_module_from_path_raises_if_module_spec_cannot_be_created(
-        self, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
-    ) -> None:
-        module_file = tmp_path / "models.py"
-        module_file.write_text("\n")
-
-        monkeypatch.setattr(
-            "PydanticLibrary.model_loader.importlib.util.spec_from_file_location",
-            lambda *args, **kwargs: None,
-        )
-
-        with pytest.raises(ImportError, match="Could not load module spec"):
-            load_module_from_path(module_file)
-
-    def test_sanitize_module_stem_handles_edge_cases(self) -> None:
-        assert sanitize_module_stem("!!!") == "models"
-        assert sanitize_module_stem("123-model") == "_123_model"

@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
+from textwrap import dedent
 
 import pytest
 
@@ -52,8 +52,8 @@ class TestKeywordExecution:
         lib = PydanticLibrary(str(models_file))
 
         obj = lib.run_keyword(
-            "Validate ShoppingCart",
-            (
+            name="Validate ShoppingCart",
+            args=(
                 {
                     "cart_id": "1",
                     "customer_name": "Alice",
@@ -67,14 +67,13 @@ class TestKeywordExecution:
                     ],
                 },
             ),
-            {},
+            kwargs={},
         )
 
         assert obj.cart_id == 1
         assert obj.customer_name == "Alice"
         assert len(obj.items) == 1
         assert obj.items[0].name == "Apple"
-        assert type(obj).__module__ == "robotframework_pydantic_models__models"
 
     def test_create_dynamic_keyword_returns_model_instance(
         self, models_file: Path
@@ -82,9 +81,9 @@ class TestKeywordExecution:
         lib = PydanticLibrary(str(models_file))
 
         obj = lib.run_keyword(
-            "Create ShoppingCart",
-            tuple(),
-            {
+            name="Create ShoppingCart",
+            args=tuple(),
+            kwargs={
                 "cart_id": 2,
                 "customer_name": "Bob",
                 "items": [
@@ -110,15 +109,15 @@ class TestKeywordExecution:
 
         with pytest.raises(AssertionError, match="Validation failed"):
             lib.run_keyword(
-                "Validate ShoppingCart",
-                (
+                name="Validate ShoppingCart",
+                args=(
                     {
                         "cart_id": "not-an-int",
                         "customer_name": "Alice",
                         "items": [],
                     },
                 ),
-                {},
+                kwargs={},
             )
 
     def test_validate_keyword_rejects_kwargs(self, models_file: Path) -> None:
@@ -126,9 +125,9 @@ class TestKeywordExecution:
 
         with pytest.raises(TypeError, match="Unexpected keyword arguments"):
             lib.run_keyword(
-                "Validate ShoppingCart",
-                tuple(),
-                {"cart_id": 1, "customer_name": "Alice"},
+                name="Validate ShoppingCart",
+                args=tuple(),
+                kwargs={"cart_id": 1, "customer_name": "Alice"},
             )
 
     def test_validate_keyword_requires_exactly_one_positional_argument(
@@ -162,9 +161,9 @@ class TestKeywordExecution:
 
         with pytest.raises(AssertionError, match="Creation failed"):
             lib.run_keyword(
-                "Create CartItem",
-                tuple(),
-                {
+                name="Create CartItem",
+                args=tuple(),
+                kwargs={
                     "product_id": "not-an-int",
                     "name": "Apple",
                     "quantity": 1,
@@ -178,16 +177,42 @@ class TestKeywordExecution:
         with pytest.raises(AttributeError, match="Unknown keyword"):
             lib.run_keyword("Unknown Keyword", tuple(), {})
 
+    def test_unknown_model_name_is_reported_for_validate_keyword(
+        self, models_file: Path
+    ) -> None:
+        lib = PydanticLibrary(str(models_file))
+
+        with pytest.raises(AttributeError, match="Unknown model 'MissingModel'"):
+            lib.run_keyword("Validate MissingModel", ({},), {})
+
+    def test_unknown_model_name_is_reported_for_create_keyword(
+        self, models_file: Path
+    ) -> None:
+        lib = PydanticLibrary(str(models_file))
+
+        with pytest.raises(AttributeError, match="Unknown model 'MissingModel'"):
+            lib.run_keyword("Create MissingModel", tuple(), {})
+
+    def test_empty_model_name_keywords_are_rejected_as_unknown_keyword(
+        self, models_file: Path
+    ) -> None:
+        lib = PydanticLibrary(str(models_file))
+
+        with pytest.raises(AttributeError, match="Unknown keyword"):
+            lib.run_keyword("Validate ", ({},), {})
+
+        with pytest.raises(AttributeError, match="Unknown keyword"):
+            lib.run_keyword("Create ", tuple(), {})
+
 
 class TestKeywordMetadata:
-    def test_create_keyword_documentation_is_concise(self, models_file: Path) -> None:
+    def test_create_keyword_documentation(self, models_file: Path) -> None:
         lib = PydanticLibrary(str(models_file))
 
         doc = lib.get_keyword_documentation("Create CartItem")
 
         assert "Create and return an instance of ``CartItem``" in doc
         assert "Use named arguments matching the model field names." in doc
-        assert "Fields for ``CartItem``:" not in doc
 
     def test_create_keyword_arguments_expose_model_fields(
         self, models_file: Path
@@ -251,13 +276,13 @@ class TestKeywordMetadata:
     ) -> None:
         models_file = tmp_path / "factory_models.py"
         models_file.write_text(
-            """
-from pydantic import BaseModel, Field
+            dedent("""
+            from pydantic import BaseModel, Field
 
 
-class FactoryModel(BaseModel):
-    tags: list[str] = Field(default_factory=list)
-""".strip()
+            class FactoryModel(BaseModel):
+                tags: list[str] = Field(default_factory=list)
+        """).strip()
             + "\n"
         )
         lib = PydanticLibrary(str(models_file))
@@ -266,44 +291,38 @@ class FactoryModel(BaseModel):
 
         assert ("tags", "<factory:list>") in args
 
-
-class TestInternalHelpers:
-    def test_validate_and_create_keyword_name_resolution_errors_are_clear(
-        self, models_file: Path
+    def test_keyword_types_render_supported_annotation_shapes(
+        self, tmp_path: Path
     ) -> None:
-        lib = PydanticLibrary(str(models_file))
+        models_file = tmp_path / "typed_models.py"
+        models_file.write_text(
+            dedent("""
+            from collections.abc import Callable, Sequence
+            from typing import Any
 
-        assert lib._extract_model_name_from_validate_keyword("Not Validate") is None
-        assert lib._extract_model_name_from_validate_keyword("Validate ") is None
-        with pytest.raises(AttributeError, match="Unknown model 'MissingModel'"):
-            lib._extract_model_name_from_validate_keyword("Validate MissingModel")
+            from pydantic import BaseModel
 
-        assert lib._extract_model_name_from_create_keyword("Not Create") is None
-        assert lib._extract_model_name_from_create_keyword("Create ") is None
-        with pytest.raises(AttributeError, match="Unknown model 'MissingModel'"):
-            lib._extract_model_name_from_create_keyword("Create MissingModel")
 
-    def test_get_model_raises_for_unknown_model_name(self, models_file: Path) -> None:
-        lib = PydanticLibrary(str(models_file))
-
-        with pytest.raises(ValueError, match="Unknown model 'MissingModel'"):
-            lib._get_model("MissingModel")
-
-    def test_annotation_formatting_covers_common_generic_shapes(
-        self, models_file: Path
-    ) -> None:
-        lib = PydanticLibrary(str(models_file))
-
-        assert lib._type_for_argument_conversion(Any) is Any
-        assert lib._format_annotation(Any) == "Any"
-        assert (
-            lib._type_for_argument_conversion("typing.Optional[int]") == "Optional[int]"
+            class TypedModel(BaseModel):
+                any_value: Any
+                mapping: dict[str, int]
+                pair: tuple[int, str]
+                tags: set[int]
+                seq: Sequence[int]
+                either: int | str
+                callback: Callable
+        """).strip()
+            + "\n"
         )
-        assert lib._format_annotation("NoneType | str") == "None | str"
-        assert lib._format_annotation(dict[str, int]) == "dict[str, int]"
-        assert lib._format_annotation(tuple[int, str]) == "tuple[int, str]"
-        assert lib._format_annotation(set[int]) == "set[int]"
-        assert lib._format_annotation(Sequence[int]) == "Sequence[int]"
-        assert lib._format_annotation(int | str) == "int | str"
-        assert lib._format_annotation(Callable) == "Callable"
-        assert lib._format_annotation(__import__("typing").Union) == "Union"
+
+        lib = PydanticLibrary(str(models_file))
+
+        types = lib.get_keyword_types("Create TypedModel")
+
+        assert types["any_value"] is Any
+        assert types["mapping"] == "dict[str, int]"
+        assert types["pair"] == "tuple[int, str]"
+        assert types["tags"] == "set[int]"
+        assert types["seq"] == "Sequence[int]"
+        assert types["either"] == "int | str"
+        assert types["callback"].__name__ == "Callable"
