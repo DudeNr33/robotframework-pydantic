@@ -316,6 +316,12 @@ class PydanticLibrary:
                 raise ValueError(f"Model file must be a .py file: {models}")
             return self._load_module_from_path(path)
 
+        if path.is_absolute() or path.suffix == ".py":
+            raise FileNotFoundError(
+                f"Model file does not exist: {models}. "
+                "Use a valid .py file path or a Python module import path."
+            )
+
         return importlib.import_module(models)
 
     def _load_module_from_path(self, path: Path) -> ModuleType:

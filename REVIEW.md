@@ -202,8 +202,8 @@ ROBOT_LIBRARY_VERSION = version("robotframework-pydantic")
 | 2.4 | `Validate Schema` return value undocumented | 🟠 High | ✅ Fixed |
 | 2.5 | `Create <Model>` docs missing field info | 🟠 High | ✅ Fixed |
 | 3.1 | `schema` falsely optional in signature | 🟠 High | 🚫 Obsolete |
-| 3.2 | `*data, **fields` signature misleads IDEs | 🟠 High | 🔓 Open |
-| 3.3 | Misleading error for non-existent file path | 🟠 High | 🔓 Open |
+| 3.2 | `*data, **fields` signature misleads IDEs | 🟠 High | 🚫 Obsolete |
+| 3.3 | Misleading error for non-existent file path | 🟠 High | ✅ Fixed |
 | 3.4 | Hash module name leaks into errors/repr | 🟡 Medium | 🔓 Open |
 | 3.5 | No JSON string input support | 🟡 Medium | 🔓 Open |
 | 3.6 | No per-model `Validate <ModelName>` | 🟡 Medium | ✅ Fixed |

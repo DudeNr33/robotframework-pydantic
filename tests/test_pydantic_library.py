@@ -123,6 +123,13 @@ def test_validation_error_is_reported_as_assertion_error(models_file: Path) -> N
         )
 
 
+def test_non_existent_model_file_path_has_clear_error(tmp_path: Path) -> None:
+    missing = tmp_path / "missing_models.py"
+
+    with pytest.raises(FileNotFoundError, match="Model file does not exist"):
+        PydanticLibrary(str(missing))
+
+
 def test_validate_keyword_rejects_kwargs(models_file: Path) -> None:
     lib = PydanticLibrary(str(models_file))
 
