@@ -125,7 +125,11 @@ Running `robot tests/acceptance/` directly (without going through `pytest`) fail
 
 ### 4.3 No CI configuration
 
-There is no `.github/workflows/`, no `tox.ini`, no CI of any kind. There is no automated check that PRs pass tests, pass linting, or work on the declared minimum Python version (3.11). Given that pre-commit hooks are set up, a CI workflow would be a natural complement.
+Continuous Integration is now configured via GitHub Actions:
+
+- `.github/workflows/test.yml` runs linting (`ruff check`, `ruff format --check`) and tests (`pytest`) using `uv`.
+- Tests run on Python 3.11, 3.12, and 3.13.
+- `.github/workflows/publish.yml` builds distributions and runs smoke tests against both wheel and source distribution before publishing.
 
 ### 4.4 `exclude-newer = "7 days"` is a floating dependency window
 
@@ -211,7 +215,7 @@ ROBOT_LIBRARY_VERSION = version("robotframework-pydantic")
 | 3.8 | Pydantic v2 features largely unexposed | 🟡 Medium | 🔓 Open |
 | 4.1 | `robot.toml` python-path commented out | 🟡 Medium | ✅ Fixed |
 | 4.2 | Artifact HTML/XML files committed to root | 🟡 Medium | 🚫 False positive |
-| 4.3 | No CI configuration | 🟡 Medium | 🔓 Open |
+| 4.3 | No CI configuration | 🟡 Medium | ✅ Fixed |
 | 4.4 | Floating `exclude-newer = "7 days"` | 🟡 Medium | 🚫 False positive |
 | 4.5 | Dev pins Python 3.14, supports 3.11+ | 🟡 Medium | 🔓 Open |
 | 4.6 | Over-tight minimum dependency versions | 🟡 Medium | 🔓 Open |

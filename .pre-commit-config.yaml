@@ -13,10 +13,8 @@ repos:
   hooks:
     - id: ruff-check
     - id: ruff-format
-- repo: local
+- repo: https://github.com/MarketSquare/robotframework-robocop
+  rev: v8.2.8
   hooks:
+    - id: robocop-format
     - id: robocop
-      name: robocop
-      entry: uv run robocop check
-      language: python
-      files: \.(robot|resource)$
