@@ -75,22 +75,22 @@ class PydanticLibrary:
     ) -> Any:
         kwargs = kwargs or {}
 
-        model_name = self._extract_model_name_from_validate_keyword(name)
+        model_name = self._extract_model_name_from_keyword(name, "Validate")
         if model_name is not None:
             return self._validate_model(model_name, args, kwargs)
 
-        model_name = self._extract_model_name_from_create_keyword(name)
+        model_name = self._extract_model_name_from_keyword(name, "Create")
         if model_name is not None:
             return self._create_model(model_name, args, kwargs)
 
         raise AttributeError(f"Unknown keyword: {name}")
 
     def get_keyword_arguments(self, name: str) -> list[Any]:
-        model_name = self._extract_model_name_from_validate_keyword(name)
+        model_name = self._extract_model_name_from_keyword(name, "Validate")
         if model_name is not None:
             return ["data"]
 
-        model_name = self._extract_model_name_from_create_keyword(name)
+        model_name = self._extract_model_name_from_keyword(name, "Create")
         if model_name is not None:
             model_cls = self._get_model(model_name)
             return self._build_create_keyword_arguments(model_cls)
@@ -98,12 +98,12 @@ class PydanticLibrary:
         return ["*args", "**kwargs"]
 
     def get_keyword_types(self, name: str) -> dict[str, Any]:
-        model_name = self._extract_model_name_from_validate_keyword(name)
+        model_name = self._extract_model_name_from_keyword(name, "Validate")
         if model_name is not None:
             model_cls = self._get_model(model_name)
             return {"data": dict, "return": model_cls}
 
-        model_name = self._extract_model_name_from_create_keyword(name)
+        model_name = self._extract_model_name_from_keyword(name, "Create")
         if model_name is not None:
             model_cls = self._get_model(model_name)
             types: dict[str, Any] = {"extra": Any, "return": model_cls}
@@ -124,7 +124,7 @@ class PydanticLibrary:
                 "``Create <ModelName>`` keyword."
             )
 
-        model_name = self._extract_model_name_from_validate_keyword(name)
+        model_name = self._extract_model_name_from_keyword(name, "Validate")
         if model_name is not None:
             return (
                 f"Validate ``data`` against the ``{model_name}`` Pydantic model and "
@@ -136,7 +136,7 @@ class PydanticLibrary:
                 f"    ${{obj}}=    Validate {model_name}    ${{data}}"
             )
 
-        model_name = self._extract_model_name_from_create_keyword(name)
+        model_name = self._extract_model_name_from_keyword(name, "Create")
         if model_name is not None:
             return (
                 f"Create and return an instance of ``{model_name}`` from named fields.\n\n"
@@ -181,9 +181,15 @@ class PydanticLibrary:
             )
 
         model_cls = self._get_model(model_name)
+        payload: Any = kwargs
+
+        if getattr(model_cls, "__pydantic_root_model__", False) and set(kwargs) == {
+            "root"
+        }:
+            payload = kwargs["root"]
 
         try:
-            return model_cls.model_validate(kwargs)
+            return model_cls.model_validate(payload)
         except ValidationError as exc:
             raise AssertionError(
                 f"Creation failed for model '{model_cls.__name__}':\n{exc}"
@@ -267,28 +273,10 @@ class PydanticLibrary:
 
         return origin_name
 
-    def _extract_model_name_from_validate_keyword(
-        self, keyword_name: str
+    def _extract_model_name_from_keyword(
+        self, keyword_name: str, keyword_type: str
     ) -> str | None:
-        prefix = "validate "
-        if not keyword_name.lower().startswith(prefix):
-            return None
-
-        requested = keyword_name[len(prefix) :].strip()
-        if not requested:
-            return None
-
-        for existing_name in self._models:
-            if existing_name.lower() == requested.lower():
-                return existing_name
-
-        raise AttributeError(
-            f"Unknown model '{requested}' in keyword '{keyword_name}'. "
-            f"Available models: {', '.join(sorted(self._models))}"
-        )
-
-    def _extract_model_name_from_create_keyword(self, keyword_name: str) -> str | None:
-        prefix = "create "
+        prefix = f"{keyword_type.lower()} "
         if not keyword_name.lower().startswith(prefix):
             return None
 
