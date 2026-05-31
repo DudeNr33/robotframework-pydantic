@@ -17,4 +17,6 @@ repos:
   rev: v8.2.8
   hooks:
     - id: robocop-format
+      additional_dependencies: ['click']  # https://github.com/MarketSquare/robotframework-robocop/issues/1750
     - id: robocop
+      additional_dependencies: ['click']  # https://github.com/MarketSquare/robotframework-robocop/issues/1750
