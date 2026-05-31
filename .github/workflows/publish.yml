@@ -19,9 +19,9 @@ jobs:
       - name: Build
         run: uv build
       - name: Smoke test (wheel)
-        run: uv run --isolated --no-project --with dist/*.whl --with pytest pytest tests/test_robot_acceptance.py
+        run: uv run --isolated --no-project --with dist/*.whl robot tests/acceptance
       - name: Smoke test (source distribution)
-        run: uv run --isolated --no-project --with dist/*.tar.gz --with pytest pytest tests/test_robot_acceptance.py
+        run: uv run --isolated --no-project --with dist/*.tar.gz robot tests/acceptance
       - name: Store distribution packages
         uses: actions/upload-artifact@v5
         with:

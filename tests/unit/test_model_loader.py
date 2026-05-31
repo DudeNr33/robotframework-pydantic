@@ -1,7 +1,5 @@
-from __future__ import annotations
-
-import sys
 from pathlib import Path
+from textwrap import dedent
 
 import pytest
 
@@ -55,14 +53,13 @@ class TestLoadModelsModule:
     ) -> None:
         module_file = tmp_path / "123-model.py"
         module_file.write_text(
-            """
-from pydantic import BaseModel
+            dedent("""
+            from pydantic import BaseModel
 
 
-class LocalModel(BaseModel):
-    value: int
-""".strip()
-            + "\n"
+            class LocalModel(BaseModel):
+                value: int
+            """).strip()
         )
 
         module = load_models_module(str(module_file))
@@ -78,37 +75,34 @@ class TestDiscoverPydanticModels:
 
         assert sorted(models) == ["CartItem", "ShoppingCart"]
 
-    def test_excludes_imported_model_classes(self, tmp_path: Path) -> None:
+    def test_excludes_imported_model_classes(
+        self, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
         external_file = tmp_path / "external_models.py"
         external_file.write_text(
-            """
-from pydantic import BaseModel
+            dedent("""
+            from pydantic import BaseModel
 
-
-class ExternalModel(BaseModel):
-    value: int
-""".strip()
-            + "\n"
+            class ExternalModel(BaseModel):
+                value: int
+            """).strip()
         )
 
         main_file = tmp_path / "main_models.py"
         main_file.write_text(
-            """
-from pydantic import BaseModel
-from external_models import ExternalModel
+            dedent("""
+            from pydantic import BaseModel
+            from external_models import ExternalModel
 
 
-class LocalModel(BaseModel):
-    value: int
-""".strip()
+            class LocalModel(BaseModel):
+                value: int
+            """).strip()
             + "\n"
         )
 
-        sys.path.insert(0, str(tmp_path))
-        try:
-            module = load_models_module(str(main_file))
-            models = discover_pydantic_models(module)
-        finally:
-            sys.path.pop(0)
+        monkeypatch.syspath_prepend(str(tmp_path))
+        module = load_models_module(str(main_file))
+        models = discover_pydantic_models(module)
 
         assert sorted(models) == ["LocalModel"]

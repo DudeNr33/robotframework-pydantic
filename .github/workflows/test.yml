@@ -43,5 +43,22 @@ jobs:
           enable-cache: true
       - name: Install dependencies
         run: uv sync --dev
-      - name: Run tests
+      - name: Run unit/integration tests
         run: uv run pytest
+
+  robot-acceptance:
+    runs-on: ubuntu-latest
+    env:
+      UV_CACHE_DIR: /tmp/.uv-cache
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.13"
+          version: "0.11.16"
+          enable-cache: true
+      - name: Install dependencies
+        run: uv sync --dev
+      - name: Run Robot acceptance tests
+        run: uv run robot --pythonpath src tests/acceptance
