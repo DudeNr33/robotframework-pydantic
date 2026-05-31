@@ -32,5 +32,9 @@ All classes in that module inheriting from `pydantic.BaseModel` are exposed as d
 ## Run tests
 
 ```bash
+# Unit/integration tests
 uv run pytest
+
+# Robot acceptance tests
+uv run robot --pythonpath src tests/acceptance
 ```

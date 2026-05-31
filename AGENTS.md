@@ -16,4 +16,9 @@ Run all checks via `uv`:
 - Lint: `uv run ruff check`
 - Formatting: `uv run ruff format`
 
+After changing Python code, always run formatting and lint checks:
+
+1. `uv run ruff format`
+2. `uv run ruff check`
+
 Do not invoke global tools directly when `uv run` is available.

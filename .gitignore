@@ -12,7 +12,6 @@ wheels/
 # Python tooling
 .mypy_cache/
 .pytest_cache/
-.robotcode_cache/
 .ruff_cache/
 
 # Unit test / coverage reports
@@ -37,3 +36,5 @@ results/
 log.html
 report.html
 output.xml
+.robotcode_cache/
+.robocop_cache/
