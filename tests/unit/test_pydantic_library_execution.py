@@ -38,7 +38,7 @@ class TestKeywordExecution:
     ) -> None:
         obj = pydantic_library.run_keyword(
             name="Create ShoppingCart",
-            args=tuple(),
+            args=(),
             kwargs={
                 "cart_id": 2,
                 "customer_name": "Bob",
@@ -80,7 +80,7 @@ class TestKeywordExecution:
         with pytest.raises(TypeError, match="Unexpected keyword arguments"):
             pydantic_library.run_keyword(
                 name="Validate ShoppingCart",
-                args=tuple(),
+                args=(),
                 kwargs={"cart_id": 1, "customer_name": "Alice"},
             )
 
@@ -88,7 +88,7 @@ class TestKeywordExecution:
         self, pydantic_library: PydanticLibrary
     ) -> None:
         with pytest.raises(TypeError, match="requires exactly one positional argument"):
-            pydantic_library.run_keyword("Validate ShoppingCart", tuple(), {})
+            pydantic_library.run_keyword("Validate ShoppingCart", (), {})
 
     def test_create_keyword_rejects_positional_arguments(
         self, pydantic_library: PydanticLibrary
@@ -110,7 +110,7 @@ class TestKeywordExecution:
         with pytest.raises(AssertionError, match="Creation failed"):
             pydantic_library.run_keyword(
                 name="Create CartItem",
-                args=tuple(),
+                args=(),
                 kwargs={
                     "product_id": "not-an-int",
                     "name": "Apple",
@@ -123,7 +123,7 @@ class TestKeywordExecution:
         self, pydantic_library: PydanticLibrary
     ) -> None:
         with pytest.raises(AttributeError, match="Unknown keyword"):
-            pydantic_library.run_keyword("Unknown Keyword", tuple(), {})
+            pydantic_library.run_keyword("Unknown Keyword", (), {})
 
     def test_unknown_model_name_is_reported_for_validate_keyword(
         self, pydantic_library: PydanticLibrary
@@ -135,7 +135,7 @@ class TestKeywordExecution:
         self, pydantic_library: PydanticLibrary
     ) -> None:
         with pytest.raises(AttributeError, match="Unknown model 'MissingModel'"):
-            pydantic_library.run_keyword("Create MissingModel", tuple(), {})
+            pydantic_library.run_keyword("Create MissingModel", (), {})
 
     def test_empty_model_name_keywords_are_rejected_as_unknown_keyword(
         self, pydantic_library: PydanticLibrary
@@ -144,4 +144,4 @@ class TestKeywordExecution:
             pydantic_library.run_keyword("Validate ", ({},), {})
 
         with pytest.raises(AttributeError, match="Unknown keyword"):
-            pydantic_library.run_keyword("Create ", tuple(), {})
+            pydantic_library.run_keyword("Create ", (), {})

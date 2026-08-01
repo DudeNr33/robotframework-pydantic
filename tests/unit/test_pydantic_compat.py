@@ -55,14 +55,14 @@ class TestAliasSupport(_TestBase):
     def test_create(self) -> None:
         obj = self.library.run_keyword(
             "Create TestModel",
-            tuple(),
+            (),
             {"orderId": "00000000-0000-0000-0000-000000000003"},
         )
         assert str(obj.order_id) == "00000000-0000-0000-0000-000000000003"
 
         obj = self.library.run_keyword(
             "Create TestModel",
-            tuple(),
+            (),
             {"order_id": "00000000-0000-0000-0000-000000000004"},
         )
         assert str(obj.order_id) == "00000000-0000-0000-0000-000000000004"
@@ -91,7 +91,7 @@ class TestValidationAliasPathSupport(_TestBase):
     def test_create(self) -> None:
         obj = self.library.run_keyword(
             "Create AliasInputModel",
-            tuple(),
+            (),
             {"payload": {"user": {"id": "42"}}},
         )
         assert obj.user_id == 42
@@ -112,7 +112,7 @@ class TestDefaultFactorySupport(_TestBase):
         assert obj.labels == []
 
     def test_create(self) -> None:
-        obj = self.library.run_keyword("Create LabelledModel", tuple(), {})
+        obj = self.library.run_keyword("Create LabelledModel", (), {})
         assert obj.notes is None
         assert obj.labels == []
 
@@ -147,7 +147,7 @@ class TestExtraAllowSupport(_TestBase):
     def test_create(self) -> None:
         obj = self.library.run_keyword(
             "Create ExtraAllowModel",
-            tuple(),
+            (),
             {"id": 2, "customer_segment": "startup"},
         )
         assert obj.id == 2
@@ -180,13 +180,13 @@ class TestExtraForbidSupport(_TestBase):
             )
 
     def test_create(self) -> None:
-        ok = self.library.run_keyword("Create ExtraForbidModel", tuple(), {"id": 1})
+        ok = self.library.run_keyword("Create ExtraForbidModel", (), {"id": 1})
         assert ok.id == 1
 
         with pytest.raises(AssertionError, match="Extra inputs are not permitted"):
             self.library.run_keyword(
                 "Create ExtraForbidModel",
-                tuple(),
+                (),
                 {"id": 1, "unexpected": "boom"},
             )
 
@@ -212,7 +212,7 @@ class TestExtraIgnoreSupport(_TestBase):
     def test_create(self) -> None:
         obj = self.library.run_keyword(
             "Create ExtraIgnoreModel",
-            tuple(),
+            (),
             {"id": 1, "unexpected": "ignored"},
         )
         assert obj.id == 1
@@ -238,7 +238,7 @@ class TestEnumSupport(_TestBase):
         assert obj.currency.value == "USD"
 
     def test_create(self) -> None:
-        obj = self.library.run_keyword("Create Payment", tuple(), {"currency": "EUR"})
+        obj = self.library.run_keyword("Create Payment", (), {"currency": "EUR"})
         assert obj.currency.value == "EUR"
 
     def test_create_keyword_types_include_enum_type(self) -> None:
@@ -263,11 +263,11 @@ class TestStrictTypeSupport(_TestBase):
             self.library.run_keyword("Validate StrictPayload", ({"count": "2"},), {})
 
     def test_create(self) -> None:
-        ok = self.library.run_keyword("Create StrictPayload", tuple(), {"count": 2})
+        ok = self.library.run_keyword("Create StrictPayload", (), {"count": 2})
         assert ok.count == 2
 
         with pytest.raises(AssertionError, match="Input should be a valid integer"):
-            self.library.run_keyword("Create StrictPayload", tuple(), {"count": "2"})
+            self.library.run_keyword("Create StrictPayload", (), {"count": "2"})
 
 
 class TestDiscriminatedUnionSupport(_TestBase):
@@ -299,7 +299,7 @@ class TestDiscriminatedUnionSupport(_TestBase):
     def test_create(self) -> None:
         obj = self.library.run_keyword(
             "Create Checkout",
-            tuple(),
+            (),
             {"payment": {"method": "wire", "iban": "DE89370400440532013000"}},
         )
         assert obj.payment.method == "wire"
@@ -353,7 +353,7 @@ class TestRecursiveForwardReferenceSupport(_TestBase):
     def test_create(self) -> None:
         obj = self.library.run_keyword(
             "Create TreeNode",
-            tuple(),
+            (),
             {"name": "root", "children": [{"name": "child", "children": []}]},
         )
         assert obj.name == "root"
@@ -381,7 +381,7 @@ class TestGenericModelSupport(_TestBase):
         assert obj.value == 7
 
     def test_create(self) -> None:
-        obj = self.library.run_keyword("Create IntBox", tuple(), {"value": "8"})
+        obj = self.library.run_keyword("Create IntBox", (), {"value": "8"})
         assert obj.value == 8
 
 
@@ -398,7 +398,7 @@ class TestRootModelSupport(_TestBase):
         assert obj.root == [1, 2, 3]
 
     def test_create(self) -> None:
-        obj = self.library.run_keyword("Create IntList", tuple(), {"root": ["4", 5]})
+        obj = self.library.run_keyword("Create IntList", (), {"root": ["4", 5]})
         assert obj.root == [4, 5]
 
 
@@ -428,13 +428,11 @@ class TestFieldValidatorSupport(_TestBase):
             self.library.run_keyword("Validate ProductCode", ({"code": "invalid"},), {})
 
     def test_create(self) -> None:
-        obj = self.library.run_keyword(
-            "Create ProductCode", tuple(), {"code": "sku-999"}
-        )
+        obj = self.library.run_keyword("Create ProductCode", (), {"code": "sku-999"})
         assert obj.code == "SKU-999"
 
         with pytest.raises(AssertionError, match="code must start with 'SKU-'"):
-            self.library.run_keyword("Create ProductCode", tuple(), {"code": "invalid"})
+            self.library.run_keyword("Create ProductCode", (), {"code": "invalid"})
 
 
 class TestModelValidatorBeforeSupport(_TestBase):
@@ -473,7 +471,7 @@ class TestModelValidatorBeforeSupport(_TestBase):
     def test_create(self) -> None:
         obj = self.library.run_keyword(
             "Create LegacyUser",
-            tuple(),
+            (),
             {"full_name": "Grace Hopper"},
         )
         assert obj.first_name == "Grace"
@@ -482,9 +480,7 @@ class TestModelValidatorBeforeSupport(_TestBase):
         with pytest.raises(
             AssertionError, match="full_name must contain first and last name"
         ):
-            self.library.run_keyword(
-                "Create LegacyUser", tuple(), {"full_name": "Grace"}
-            )
+            self.library.run_keyword("Create LegacyUser", (), {"full_name": "Grace"})
 
 
 class TestModelValidatorAfterSupport(_TestBase):
@@ -522,7 +518,7 @@ class TestModelValidatorAfterSupport(_TestBase):
     def test_create(self) -> None:
         ok = self.library.run_keyword(
             "Create DateWindow",
-            tuple(),
+            (),
             {"start": "2026-02-01T00:00:00Z", "end": "2026-03-01T00:00:00Z"},
         )
         assert ok.end > ok.start
@@ -530,6 +526,6 @@ class TestModelValidatorAfterSupport(_TestBase):
         with pytest.raises(AssertionError, match="end must be after start"):
             self.library.run_keyword(
                 "Create DateWindow",
-                tuple(),
+                (),
                 {"start": "2026-03-01T00:00:00Z", "end": "2026-02-01T00:00:00Z"},
             )
