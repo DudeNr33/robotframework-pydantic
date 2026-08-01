@@ -6,12 +6,13 @@ on:
     branches:
       - main
 
-permissions:
-  contents: read
+permissions: {}
 
 jobs:
   lint:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     env:
       UV_CACHE_DIR: /tmp/.uv-cache
     steps:
@@ -33,6 +34,8 @@ jobs:
 
   test:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     env:
       UV_CACHE_DIR: /tmp/.uv-cache
     strategy:
@@ -55,6 +58,8 @@ jobs:
 
   robot-acceptance:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     env:
       UV_CACHE_DIR: /tmp/.uv-cache
     steps:
