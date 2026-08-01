@@ -23,7 +23,7 @@ class TestInitialization:
         lib = PydanticLibrary(models_import_path)
 
         names = lib.get_keyword_names()
-        obj = lib.run_keyword("Create ImportedModel", tuple(), {"value": "41"})
+        obj = lib.run_keyword("Create ImportedModel", (), {"value": "41"})
 
         assert names == ["Validate ImportedModel", "Create ImportedModel"]
         assert obj.value == 41

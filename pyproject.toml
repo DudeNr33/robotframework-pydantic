@@ -25,6 +25,9 @@ dev = [
   "ruff>=0.15.13",
 ]
 
+[tool.ruff.lint]
+ignore = ["N999"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests/unit", "tests/integration"]
 pythonpath = ["src"]
