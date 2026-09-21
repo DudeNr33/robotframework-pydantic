@@ -190,6 +190,7 @@ Pydantic uses "model" consistently (`BaseModel`, `model_validate`, `model_fields
 
 ```python
 from importlib.metadata import version
+
 ROBOT_LIBRARY_VERSION = version("robotframework-pydantic")
 ```
 

@@ -1,7 +1,7 @@
 *** Settings ***
-Documentation       Acceptance tests for PydanticLibrary.
+Documentation    Acceptance tests for PydanticLibrary.
 
-Library             PydanticLibrary    models=${CURDIR}/models.py
+Library          PydanticLibrary    models=${CURDIR}/models.py
 
 
 *** Test Cases ***
